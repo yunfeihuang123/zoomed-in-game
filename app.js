@@ -218,11 +218,15 @@ function renderCurrentRound() {
   roundTitle.textContent = `Round ${round.roundNumber} of ${REQUIRED_ROUNDS}`;
   roundProgress.textContent = "Zoomed image shown. Click reveal when ready.";
 
-  roundImage.src = round.imageUrl;
+  roundImage.classList.add("loading");
   zoomStage.classList.add("zoomed");
+  roundImage.src = round.imageUrl;
 
   const focalPoint = getRandomFocalPoint();
   roundImage.style.transformOrigin = `${focalPoint.x}% ${focalPoint.y}%`;
+  roundImage.onload = () => {
+    roundImage.classList.remove("loading");
+  };
 }
 
 function renderCorrectAnswer() {
