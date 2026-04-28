@@ -210,13 +210,14 @@ function initializeGame(rounds) {
 }
 
 function renderCurrentRound() {
-  answerArea.classList.add("hidden");
+  answerArea.classList.remove("hidden");
   revealControls.classList.remove("hidden");
+  nextRoundBtn.classList.add("hidden");
   optionsContainer.innerHTML = "";
 
   const round = gameState.rounds[gameState.currentRoundIndex];
   roundTitle.textContent = `Round ${round.roundNumber} of ${REQUIRED_ROUNDS}`;
-  roundProgress.textContent = "Zoomed image shown. Click reveal when ready.";
+  roundProgress.textContent = "Zoomed image and options shown. Click reveal when ready.";
 
   roundImage.classList.add("loading");
   zoomStage.classList.add("zoomed");
@@ -227,16 +228,25 @@ function renderCurrentRound() {
   roundImage.onload = () => {
     roundImage.classList.remove("loading");
   };
+
+  renderOptions(false);
 }
 
 function renderCorrectAnswer() {
-  const round = gameState.rounds[gameState.currentRoundIndex];
-  roundProgress.textContent = "Full image and answer shown.";
+  roundProgress.textContent = "Full image and correct answer shown.";
+  nextRoundBtn.classList.remove("hidden");
+  renderOptions(true);
+}
 
+function renderOptions(showCorrectAnswer) {
+  const round = gameState.rounds[gameState.currentRoundIndex];
   optionsContainer.innerHTML = "";
+
   round.options.forEach((optionText, optionIndex) => {
+    const isCorrect = optionIndex === round.correctIndex;
+    const shouldHighlight = showCorrectAnswer && isCorrect;
     const item = document.createElement("div");
-    item.className = `answer-pill ${optionIndex === round.correctIndex ? "correct" : ""}`;
+    item.className = `answer-pill ${shouldHighlight ? "correct" : ""}`;
     item.textContent = optionText;
     optionsContainer.appendChild(item);
   });
