@@ -23,7 +23,13 @@
       <div id="roundsContainer" class="rounds-container"></div>
 
       <div class="setup-actions">
+        <div class="setup-save-actions">
+          <button id="saveSetupBtn" type="button">Save Setup</button>
+          <button id="loadSetupBtn" type="button">Load Saved Setup</button>
+          <button id="clearSetupBtn" type="button">Clear Saved Setup</button>
+        </div>
         <button id="startGameBtn" type="button">Start Game</button>
+        <p id="setupStatus" class="hint"></p>
         <p id="setupError" class="error"></p>
       </div>
     </section>
@@ -79,6 +85,7 @@
       <div class="field-group">
         <label>Image</label>
         <input type="file" accept="image/*" class="round-image-input">
+        <p class="image-status hint"></p>
       </div>
       <div class="field-group">
         <label>Option 1</label>

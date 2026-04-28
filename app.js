@@ -1,4 +1,5 @@
 const REQUIRED_ROUNDS = 12;
+const SAVED_SETUP_KEY = "zoomedInGameSetupV1";
 
 const setupSection = document.getElementById("setupSection");
 const gameSection = document.getElementById("gameSection");
@@ -6,7 +7,11 @@ const resultsSection = document.getElementById("resultsSection");
 
 const roundsContainer = document.getElementById("roundsContainer");
 const addRoundBtn = document.getElementById("addRoundBtn");
+const saveSetupBtn = document.getElementById("saveSetupBtn");
+const loadSetupBtn = document.getElementById("loadSetupBtn");
+const clearSetupBtn = document.getElementById("clearSetupBtn");
 const startGameBtn = document.getElementById("startGameBtn");
+const setupStatus = document.getElementById("setupStatus");
 const setupError = document.getElementById("setupError");
 const roundTemplate = document.getElementById("roundTemplate");
 
@@ -36,10 +41,12 @@ let gameState = null;
 addRoundBtn.addEventListener("click", () => {
   addRoundCard();
   renderRoundLabels();
+  setupStatus.textContent = "";
 });
 
 startGameBtn.addEventListener("click", async () => {
   setupError.textContent = "";
+  setupStatus.textContent = "";
 
   if (roundCards.length !== REQUIRED_ROUNDS) {
     setupError.textContent = `You need exactly ${REQUIRED_ROUNDS} rounds.`;
@@ -57,6 +64,48 @@ startGameBtn.addEventListener("click", async () => {
 
   initializeGame(rounds);
   renderCurrentRound();
+});
+
+saveSetupBtn.addEventListener("click", async () => {
+  setupError.textContent = "";
+  setupStatus.textContent = "";
+
+  const setupData = await collectSetupDataForStorage();
+  if (!setupData) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(SAVED_SETUP_KEY, JSON.stringify(setupData));
+    setupStatus.textContent = "Setup saved. You can refresh and load it later.";
+  } catch (error) {
+    setupError.textContent = "Could not save setup. Try smaller images.";
+  }
+});
+
+loadSetupBtn.addEventListener("click", () => {
+  setupError.textContent = "";
+  setupStatus.textContent = "";
+  const stored = localStorage.getItem(SAVED_SETUP_KEY);
+
+  if (!stored) {
+    setupError.textContent = "No saved setup found.";
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+    applySavedSetup(parsed);
+    setupStatus.textContent = "Saved setup loaded.";
+  } catch (error) {
+    setupError.textContent = "Saved setup is invalid. Clear and save again.";
+  }
+});
+
+clearSetupBtn.addEventListener("click", () => {
+  localStorage.removeItem(SAVED_SETUP_KEY);
+  setupStatus.textContent = "Saved setup cleared.";
+  setupError.textContent = "";
 });
 
 revealBtn.addEventListener("click", () => {
@@ -106,6 +155,7 @@ restartBtn.addEventListener("click", () => {
   chartSection.classList.add("hidden");
   barChart.innerHTML = "";
   setupError.textContent = "";
+  setupStatus.textContent = "";
   for (let i = 0; i < REQUIRED_ROUNDS; i += 1) {
     addRoundCard();
   }
@@ -115,7 +165,19 @@ restartBtn.addEventListener("click", () => {
 function addRoundCard() {
   const node = roundTemplate.content.firstElementChild.cloneNode(true);
   const removeBtn = node.querySelector(".remove-round");
-  const cardData = { node };
+  const imageInput = node.querySelector(".round-image-input");
+  const imageStatus = node.querySelector(".image-status");
+  const cardData = { node, savedImageUrl: "" };
+
+  imageInput.addEventListener("change", () => {
+    cardData.savedImageUrl = "";
+    if (imageInput.files[0]) {
+      imageStatus.textContent = `Loaded: ${imageInput.files[0].name}`;
+    } else {
+      imageStatus.textContent = "";
+    }
+  });
+
   roundCards.push(cardData);
 
   removeBtn.addEventListener("click", () => {
@@ -163,7 +225,7 @@ async function parseRoundCard(card, index) {
 
   roundError.textContent = "";
   const file = imageInput.files[0];
-  if (!file) {
+  if (!file && !card.savedImageUrl) {
     roundError.textContent = "Upload an image.";
     return null;
   }
@@ -180,7 +242,7 @@ async function parseRoundCard(card, index) {
     return null;
   }
 
-  const imageUrl = await readFileAsDataUrl(file);
+  const imageUrl = file ? await readFileAsDataUrl(file) : card.savedImageUrl;
   return {
     roundNumber: index + 1,
     imageUrl,
@@ -196,6 +258,82 @@ function readFileAsDataUrl(file) {
     reader.onerror = () => reject(new Error("Could not read image file."));
     reader.readAsDataURL(file);
   });
+}
+
+async function collectSetupDataForStorage() {
+  if (roundCards.length !== REQUIRED_ROUNDS) {
+    setupError.textContent = `You need exactly ${REQUIRED_ROUNDS} rounds to save.`;
+    return null;
+  }
+
+  const rounds = [];
+  for (let i = 0; i < roundCards.length; i += 1) {
+    const card = roundCards[i];
+    const node = card.node;
+    const optionInputs = [...node.querySelectorAll(".option-input")];
+    const correctOptionSelect = node.querySelector(".correct-option-select");
+    const roundError = node.querySelector(".round-error");
+    const imageInput = node.querySelector(".round-image-input");
+
+    roundError.textContent = "";
+    const options = optionInputs.map((input) => input.value.trim());
+    if (options.some((option) => !option)) {
+      roundError.textContent = "Fill in all 5 options before saving.";
+      return null;
+    }
+
+    const correctIndex = Number(correctOptionSelect.value);
+    if (Number.isNaN(correctIndex)) {
+      roundError.textContent = "Select the correct option before saving.";
+      return null;
+    }
+
+    let imageUrl = card.savedImageUrl;
+    if (imageInput.files[0]) {
+      imageUrl = await readFileAsDataUrl(imageInput.files[0]);
+    }
+
+    if (!imageUrl) {
+      roundError.textContent = "Upload an image before saving.";
+      return null;
+    }
+
+    rounds.push({
+      options,
+      correctIndex,
+      imageUrl
+    });
+  }
+
+  return {
+    savedAt: new Date().toISOString(),
+    rounds
+  };
+}
+
+function applySavedSetup(savedSetup) {
+  if (!savedSetup || !Array.isArray(savedSetup.rounds) || savedSetup.rounds.length !== REQUIRED_ROUNDS) {
+    throw new Error("Invalid saved setup.");
+  }
+
+  roundsContainer.innerHTML = "";
+  roundCards.length = 0;
+  savedSetup.rounds.forEach((roundData) => {
+    addRoundCard();
+    const card = roundCards[roundCards.length - 1];
+    const node = card.node;
+    const optionInputs = [...node.querySelectorAll(".option-input")];
+    const correctOptionSelect = node.querySelector(".correct-option-select");
+    const imageStatus = node.querySelector(".image-status");
+
+    optionInputs.forEach((input, index) => {
+      input.value = roundData.options[index] || "";
+    });
+    correctOptionSelect.value = String(roundData.correctIndex);
+    card.savedImageUrl = roundData.imageUrl || "";
+    imageStatus.textContent = card.savedImageUrl ? "Loaded from saved setup." : "";
+  });
+  renderRoundLabels();
 }
 
 function initializeGame(rounds) {
