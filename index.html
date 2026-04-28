@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zoomed In Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Zoomed In</h1>
+      <p class="subtitle">Build your own 12-image zoom quiz and play with friends.</p>
+    </header>
+
+    <section id="setupSection" class="card">
+      <h2>Game Setup</h2>
+      <div class="rounds-header">
+        <h3>Rounds (12 required)</h3>
+        <button id="addRoundBtn" type="button">Add Round</button>
+      </div>
+      <p class="hint">Each round needs 1 image, 5 options, and the correct option.</p>
+      <div id="roundsContainer" class="rounds-container"></div>
+
+      <div class="setup-actions">
+        <button id="startGameBtn" type="button">Start Game</button>
+        <p id="setupError" class="error"></p>
+      </div>
+    </section>
+
+    <section id="gameSection" class="card hidden">
+      <div class="game-top">
+        <h2 id="roundTitle">Round</h2>
+        <p id="roundProgress"></p>
+      </div>
+
+      <div id="zoomStage" class="zoom-stage">
+        <img id="roundImage" alt="Round image">
+      </div>
+
+      <div id="revealControls" class="actions">
+        <button id="revealBtn" type="button">Reveal Full Image & Answers</button>
+      </div>
+
+      <div id="answerArea" class="hidden">
+        <h3>Correct Answer</h3>
+        <div id="optionsContainer" class="options"></div>
+        <div class="actions">
+          <button id="nextRoundBtn" type="button">Next Round</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="card hidden">
+      <h2>Final Score Entry</h2>
+      <div class="manual-score-controls">
+        <button id="addParticipantBtn" type="button">Add Participant</button>
+      </div>
+      <div id="participantsContainer" class="participants-container"></div>
+      <p id="resultsError" class="error"></p>
+      <div class="actions">
+        <button id="showChartBtn" type="button">Show Ranking Chart</button>
+      </div>
+
+      <div id="chartSection" class="hidden">
+        <h3>Ranking (Highest to Lowest)</h3>
+        <div id="barChart" class="bar-chart"></div>
+      </div>
+      <button id="restartBtn" type="button">Create New Game</button>
+    </section>
+  </main>
+
+  <template id="roundTemplate">
+    <article class="round-card">
+      <div class="round-top">
+        <h4 class="round-name">Round</h4>
+        <button type="button" class="remove-round">Remove</button>
+      </div>
+      <div class="field-group">
+        <label>Image</label>
+        <input type="file" accept="image/*" class="round-image-input">
+      </div>
+      <div class="field-group">
+        <label>Option 1</label>
+        <input type="text" class="option-input" data-option-index="0">
+      </div>
+      <div class="field-group">
+        <label>Option 2</label>
+        <input type="text" class="option-input" data-option-index="1">
+      </div>
+      <div class="field-group">
+        <label>Option 3</label>
+        <input type="text" class="option-input" data-option-index="2">
+      </div>
+      <div class="field-group">
+        <label>Option 4</label>
+        <input type="text" class="option-input" data-option-index="3">
+      </div>
+      <div class="field-group">
+        <label>Option 5</label>
+        <input type="text" class="option-input" data-option-index="4">
+      </div>
+      <div class="field-group">
+        <label>Correct option</label>
+        <select class="correct-option-select">
+          <option value="">Select correct answer</option>
+          <option value="0">Option 1</option>
+          <option value="1">Option 2</option>
+          <option value="2">Option 3</option>
+          <option value="3">Option 4</option>
+          <option value="4">Option 5</option>
+        </select>
+      </div>
+      <p class="round-error error"></p>
+    </article>
+  </template>
+
+  <template id="participantTemplate">
+    <article class="participant-card">
+      <div class="field-group">
+        <label>Name</label>
+        <input type="text" class="participant-name-input" placeholder="Participant name">
+      </div>
+      <div class="field-group">
+        <label>Score</label>
+        <input type="text" class="participant-score-input" placeholder="0 - 12">
+      </div>
+      <button type="button" class="remove-participant">Remove Participant</button>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
